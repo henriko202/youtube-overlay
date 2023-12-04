@@ -179,174 +179,168 @@ function App() {
       </div>
 
       {modalProps.isOpen && (
-        <>
-          <Rnd
-            default={{
-              x: modalProps.x,
-              y: modalProps.y,
-              width: modalProps.width,
-              height: modalProps.height,
-            }}
-            minHeight={280}
-            minWidth={300}
-            bounds="window"
-            onDragStart={() => {
-              setModalProps({ ...modalProps, isDragging: true })
-            }}
-            onDragStop={() => {
-              setModalProps({ ...modalProps, isDragging: false })
-            }}
-            onDrag={(_e, d) => {
-              setModalProps({ ...modalProps, x: d.x, y: d.y })
-            }}
-            onResize={(_e, _direction, ref) => {
-              setModalProps({
-                ...modalProps,
-                width: ref.offsetWidth,
-                height: ref.offsetHeight,
-              })
-            }}
-            dragHandleClassName="handle"
-            className="z-10"
-          >
-            <div className="h-full w-full rounded-lg bg-cyan-700 pb-[52px] shadow-xl">
-              <div className="flex justify-center">
-                <div className="handle w-full cursor-move text-center font-bold text-gray-800">::::::::::</div>
-                <div
-                  className="absolute right-0 top-0 z-50 h-[24px] w-[24px] cursor-pointer"
+        <Rnd
+          default={{
+            x: modalProps.x,
+            y: modalProps.y,
+            width: modalProps.width,
+            height: modalProps.height,
+          }}
+          minHeight={280}
+          minWidth={300}
+          bounds="window"
+          onDragStart={() => {
+            setModalProps({ ...modalProps, isDragging: true })
+          }}
+          onDragStop={() => {
+            setModalProps({ ...modalProps, isDragging: false })
+          }}
+          onDrag={(_e, d) => {
+            setModalProps({ ...modalProps, x: d.x, y: d.y })
+          }}
+          onResize={(_e, _direction, ref) => {
+            setModalProps({
+              ...modalProps,
+              width: ref.offsetWidth,
+              height: ref.offsetHeight,
+            })
+          }}
+          dragHandleClassName="handle"
+          className="z-10"
+        >
+          <div className="h-full w-full rounded-lg bg-cyan-700 pb-[52px] shadow-xl">
+            <div className="flex justify-center">
+              <div className="handle w-full cursor-move text-center font-bold text-gray-800">::::::::::</div>
+              <div
+                className="absolute right-0 top-0 z-50 h-[24px] w-[24px] cursor-pointer"
+                onClick={() => {
+                  setModalProps({ ...modalProps, isOpen: false })
+                }}
+              >
+                <img className="h-[24px] w-[24px]" src={Close} alt="close" />
+              </div>
+            </div>
+
+            {/* Youtube Container */}
+            <div className="h-full w-full">
+              {/* Para quando o drag for na parte de baixo da tela, se o mouse ir pra cima do iframe o drag dá problema */}
+              {modalProps.isDragging && <div className="absolute h-[90%] w-full" />}
+
+              <YouTube
+                id="Youtube-Pic-in-Pic-Player"
+                videoId={videoId}
+                opts={opts}
+                iframeClassName="rounded-lg h-full w-full"
+                className="iframeContainer h-full w-full rounded-lg bg-cyan-700"
+                onReady={onPlayerReady}
+                loading="eager"
+                onPlay={() => {
+                  setIsPlaying(true)
+                }}
+                onPause={() => {
+                  setIsPlaying(false)
+                }}
+              />
+            </div>
+
+            {/* Controles */}
+            <div className="absolute z-50 flex w-full items-center justify-between py-1">
+              {isPlaying ? (
+                <img
+                  className="h-[20px] w-[20px] cursor-pointer"
+                  src={Pause}
+                  alt="pause"
                   onClick={() => {
-                    setModalProps({ ...modalProps, isOpen: false })
+                    setIsPlaying(false)
+                    playerRef.current.pauseVideo()
                   }}
-                >
-                  <img className="h-[24px] w-[24px]" src={Close} alt="close" />
+                />
+              ) : (
+                <img
+                  className="h-[20px] w-[20px] cursor-pointer"
+                  src={play}
+                  alt="play"
+                  onClick={() => {
+                    setIsPlaying(true)
+                    playerRef.current.playVideo()
+                  }}
+                />
+              )}
+
+              {/* Slider de duração do vídeo */}
+              <div className="flex w-full">
+                <input
+                  type="range"
+                  min="0"
+                  max={totalDuration}
+                  value={currentlyElapsed}
+                  onChange={(e) => {
+                    setCurrentlyElapsed(parseInt(e.target.value))
+                    playerRef.current.seekTo(parseInt(e.target.value))
+                  }}
+                  onMouseMove={(e: React.MouseEvent<HTMLDivElement>) => {
+                    const width = e.currentTarget.clientWidth
+                    const rect = e.currentTarget.getBoundingClientRect()
+                    const x = e.clientX - rect.left
+                    const hoverValue = (x / width) * totalDuration
+                    setOnHoverSpyDuration(hoverValue)
+
+                    tooltipRef.current.style.display = "block"
+                    tooltipRef.current.style.left = `${x}px`
+                  }}
+                  onMouseLeave={() => {
+                    tooltipRef.current.style.display = "none"
+                  }}
+                />
+                <div id="tooltip" className="ml-[4px] whitespace-nowrap rounded-lg text-xs text-white" ref={tooltipRef}>
+                  {msToTime(onHoverSpyDuration * 1000)}
                 </div>
               </div>
 
-              {/* Youtube Container */}
-              <div className="h-full w-full">
-                {/* Para quando o drag for na parte de baixo da tela, se o mouse ir pra cima do iframe o drag dá problema */}
-                {modalProps.isDragging && <div className="absolute h-[90%] w-full" />}
+              {/* Volume */}
+              <div
+                onMouseEnter={() => {
+                  const volumeElement = document.getElementById("volume")!
+                  volumeElement.style.opacity = "1"
+                  volumeElement.style.visibility = "visible"
+                }}
+                onMouseLeave={() => {
+                  const volumeElement = document.getElementById("volume")!
+                  volumeElement.style.opacity = "0"
+                  volumeElement.style.visibility = "hidden"
+                }}
+              >
+                <img className="mx-1 h-[20px] w-[20px] cursor-pointer" src={Volume} alt="volume" />
 
-                <YouTube
-                  id="Youtube-Pic-in-Pic-Player"
-                  videoId={videoId}
-                  opts={opts}
-                  iframeClassName="rounded-lg h-full w-full"
-                  className="iframeContainer h-full w-full rounded-lg bg-cyan-700"
-                  onReady={onPlayerReady}
-                  loading="eager"
-                  onPlay={() => {
-                    setIsPlaying(true)
-                  }}
-                  onPause={() => {
-                    setIsPlaying(false)
-                  }}
-                />
-              </div>
-
-              {/* Controles */}
-              <div className="absolute z-50 flex w-full items-center justify-between py-1">
-                {isPlaying ? (
-                  <img
-                    className="h-[20px] w-[20px] cursor-pointer"
-                    src={Pause}
-                    alt="pause"
-                    onClick={() => {
-                      setIsPlaying(false)
-                      playerRef.current.pauseVideo()
-                    }}
-                  />
-                ) : (
-                  <img
-                    className="h-[20px] w-[20px] cursor-pointer"
-                    src={play}
-                    alt="play"
-                    onClick={() => {
-                      setIsPlaying(true)
-                      playerRef.current.playVideo()
-                    }}
-                  />
-                )}
-
-                {/* Slider de duração do vídeo */}
-                <div className="flex w-full">
+                <div
+                  id="volume"
+                  className="invisible absolute mx-1 flex h-[20px] w-[100px] translate-x-[-40%] translate-y-[-400%] -rotate-90 select-none items-center rounded-md rounded-l-none bg-slate-700/50 px-1 align-middle opacity-0 transition-opacity"
+                >
                   <input
                     type="range"
                     min="0"
-                    max={totalDuration}
-                    value={currentlyElapsed}
+                    max="100"
+                    value={volume}
                     onChange={(e) => {
-                      setCurrentlyElapsed(parseInt(e.target.value))
-                      playerRef.current.seekTo(parseInt(e.target.value))
-                    }}
-                    onMouseMove={(e: React.MouseEvent<HTMLDivElement>) => {
-                      const width = e.currentTarget.clientWidth
-                      const rect = e.currentTarget.getBoundingClientRect()
-                      const x = e.clientX - rect.left
-                      const hoverValue = (x / width) * totalDuration
-                      setOnHoverSpyDuration(hoverValue)
-
-                      tooltipRef.current.style.display = "block"
-                      tooltipRef.current.style.left = `${x}px`
-                    }}
-                    onMouseLeave={() => {
-                      tooltipRef.current.style.display = "none"
+                      setVolume(Number(e.target.value))
+                      playerRef.current.setVolume(Number(e.target.value))
                     }}
                   />
-                  <div
-                    id="tooltip"
-                    className="ml-[4px] whitespace-nowrap rounded-lg text-xs text-white"
-                    ref={tooltipRef}
-                  >
-                    {msToTime(onHoverSpyDuration * 1000)}
-                  </div>
                 </div>
-
-                {/* Volume */}
-                <div
-                  onMouseEnter={() => {
-                    const volumeElement = document.getElementById("volume")!
-                    volumeElement.style.opacity = "1"
-                    volumeElement.style.visibility = "visible"
-                  }}
-                  onMouseLeave={() => {
-                    const volumeElement = document.getElementById("volume")!
-                    volumeElement.style.opacity = "0"
-                    volumeElement.style.visibility = "hidden"
-                  }}
-                >
-                  <img className="mx-1 h-[20px] w-[20px] cursor-pointer" src={Volume} alt="volume" />
-
-                  <div
-                    id="volume"
-                    className="invisible absolute mx-1 flex h-[20px] w-[100px] translate-x-[-40%] translate-y-[-400%] -rotate-90 select-none items-center rounded-md rounded-l-none bg-slate-700/50 px-1 align-middle opacity-0 transition-opacity"
-                  >
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      value={volume}
-                      onChange={(e) => {
-                        setVolume(Number(e.target.value))
-                        playerRef.current.setVolume(Number(e.target.value))
-                      }}
-                    />
-                  </div>
-                </div>
-
-                {/* Tela cheia */}
-                <img
-                  className="mx-1 h-[20px] w-[20px] cursor-pointer"
-                  src={Fullscreen}
-                  alt="fullscreen"
-                  onClick={() => {
-                    makeFullscreen()
-                  }}
-                />
               </div>
+
+              {/* Tela cheia */}
+              <img
+                className="mx-1 h-[20px] w-[20px] cursor-pointer"
+                src={Fullscreen}
+                alt="fullscreen"
+                onClick={() => {
+                  makeFullscreen()
+                }}
+              />
             </div>
-          </Rnd>
-        </>
+          </div>
+        </Rnd>
       )}
     </div>
   )
